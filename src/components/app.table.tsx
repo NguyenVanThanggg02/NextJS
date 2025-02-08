@@ -6,6 +6,8 @@ import CreateModal from "./create.modal";
 import { toast } from "react-toastify";
 import { useParams } from "next/navigation";
 import UpdateModal from "./update.modal";
+import Link from "next/link";
+import { mutate } from "swr";
 interface IProps {
   blogs: IBlog[];
 }
@@ -14,17 +16,24 @@ const TablePage = (props: IProps) => {
   const [showModalCreate, setShowModalCreate] = useState<boolean>(false);
   const [blog, setBlog] = useState<IBlog | null>(null);
   const handleDelete = (id: number) => {
-    fetch(`http://localhost:8000/blogs/${id}}`, {
-      method: "DELETE",
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data) {
-          toast.success("Blog has been deleted");
-        } else {
-          toast.error("Failed to delete blog");
-        }
-      });
+    if (confirm(`Are you sure to delete this blog? ${id}`)) {
+      fetch(`http://localhost:8000/blogs/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Accept": "application/json, text/plain, */*",
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data) {
+            toast.success("Blog has been deleted");
+            mutate("http://localhost:8000/blogs");
+          } else {
+            toast.error("Failed to delete blog");
+          }
+        });
+    }
   };
   return (
     <>
@@ -53,7 +62,14 @@ const TablePage = (props: IProps) => {
               <td>{b.title}</td>
               <td>{b.author}</td>
               <td>
-                <Button>View</Button>
+                <Button>
+                  <Link
+                    href={`/blogs/${b.id}`}
+                    style={{ color: "white", textDecoration: "none" }}
+                  >
+                    View
+                  </Link>
+                </Button>
                 <Button
                   variant="warning"
                   className="mx-3"
